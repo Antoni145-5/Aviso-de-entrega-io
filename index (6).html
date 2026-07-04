@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Alerta de Entrega IA</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gradient-to-br from-indigo-50 to-blue-100 min-h-screen p-4 flex flex-col items-center font-sans">
+
+    <div class="w-full max-w-md space-y-6 mt-4">
+        
+        <div class="bg-gradient-to-r from-blue-600 to-indigo-700 text-white rounded-3xl p-6 shadow-xl text-center">
+            <h1 class="text-2xl font-black">🤖 Alerta de Entrega IA</h1>
+            <p class="text-blue-100 text-sm mt-1">Rastreamento inteligente em tempo real</p>
+        </div>
+
+        <div class="bg-white rounded-3xl p-6 shadow-lg border border-indigo-100">
+            <label class="text-sm font-bold text-gray-600 block mb-2">Seu número WhatsApp (com DDD):</label>
+            <input type="tel" id="whatsappNumber" placeholder="Ex: 5511999999999" 
+                   class="w-full px-4 py-3 bg-gray-50 rounded-xl border border-gray-200 focus:ring-2 focus:ring-blue-500 outline-none font-mono text-sm">
+            <button onclick="salvarWhatsApp()" class="mt-2 w-full text-xs text-blue-600 font-bold hover:underline text-left">💾 Salvar número</button>
+        </div>
+
+        <div class="bg-white rounded-3xl p-6 shadow-lg border border-indigo-100 space-y-4">
+            <label class="text-sm font-bold text-gray-600 block mb-1">Cadastrar Código de Rastreio:</label>
+            <input type="text" id="codigoRastreio" placeholder="Código de rastreamento (ex: BR123456)" 
+                   class="w-full px-4 py-3 bg-gray-50 rounded-xl border border-gray-200 focus:ring-2 focus:ring-blue-500 outline-none text-sm">
+            <button onclick="adicionarPedido()" 
+                    class="w-full bg-blue-600 text-white font-black py-4 rounded-2xl shadow-lg hover:shadow-blue-200 transition-all text-center block">
+                🚀 Adicionar e Rastrear
+            </button>
+        </div>
+
+        <div class="space-y-3">
+            <div class="flex justify-between items-center px-2">
+                <h2 class="text-xs font-bold text-gray-500 uppercase tracking-wider">Meus Pedidos</h2>
+                <button onclick="limparHistorico()" class="text-xs text-red-500 font-semibold hover:underline">
+                    🗑️ Limpar Histórico
+                </button>
+            </div>
+            <div id="listaPedidos" class="space-y-3">
+                </div>
+        </div>
+
+        <div class="pt-2">
+            <a href="https://mpago.la/1frU2RG" target="_blank"
+               class="w-full bg-sky-500 hover:bg-sky-600 text-white font-bold py-3 px-4 rounded-2xl shadow-md transition-all flex justify-center items-center gap-2 text-sm text-center block">
+                💙 Apoiar o App via Mercado Pago
+            </a>
+        </div>
+    </div>
+
+    <script>
+        // Inicializa as variáveis lendo do LocalStorage do navegador
+        let pedidos = JSON.parse(localStorage.getItem('pedidos')) || [];
+        
+        // Carrega o número do WhatsApp se já estiver salvo assim que a página abre
+        window.onload = function() {
+            const salvo = localStorage.getItem('whatsapp') || "";
+            document.getElementById('whatsappNumber').value = salvo;
+            renderizar();
+        };
+
+        function salvarWhatsApp() {
+            const num = document.getElementById('whatsappNumber').value.trim();
+            if(!num) {
+                alert("Por favor, digite um número válido.");
+                return;
+            }
+            localStorage.setItem('whatsapp', num);
+            alert("Número do WhatsApp salvo com sucesso!");
+        }
+
+        function adicionarPedido() {
+            const inputCodigo = document.getElementById('codigoRastreio');
+            const codigo = inputCodigo.value.trim().toUpperCase();
+            
+            if (!codigo) {
+                alert("Digite um código de rastreamento válido!");
+                return;
+            }
+
+            // Status inicial simulado 
+            const statusSimulado = "A caminho (Em trânsito)";
+            
+            // Adiciona ao array
+            pedidos.push({ codigo: codigo, status: statusSimulado });
+            
+            // Salva no LocalStorage para não sumir ao recarregar
+            localStorage.setItem('pedidos', JSON.stringify(pedidos));
+            
+            // Limpa o campo de entrada
+            inputCodigo.value = "";
+            
+            // Atualiza a tela
+            renderizar();
+        }
+
+        function limparHistorico() {
+            if (pedidos.length === 0) {
+                alert("O seu histórico já está vazio!");
+                return;
+            }
+            
+            if (confirm("Tem certeza que deseja apagar todo o histórico de alertas?")) {
+                pedidos = [];
+                localStorage.removeItem('pedidos');
+                renderizar();
+            }
+        }
+
+        function renderizar() {
+            const container = document.getElementById('listaPedidos');
+            
+            if (pedidos.length === 0) {
+                container.innerHTML = `
+                    <div class="text-center text-sm text-gray-400 py-6 bg-white/60 rounded-3xl border border-dashed border-gray-300">
+                        Nenhum pedido no histórico.
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = pedidos.map((p, i) => `
+                <div class="bg-white p-4 rounded-2xl shadow-sm flex justify-between items-center border-l-4 border-blue-500">
+                    <div>
+                        <p class="font-bold text-gray-800 text-sm font-mono">${p.codigo}</p>
+                        <p class="text-xs text-blue-600 font-semibold mt-0.5">${p.status}</p>
+                    </div>
+                    <button onclick="notificarWhatsApp('${p.codigo}')" 
+                            class="bg-green-500 text-white px-4 py-2 rounded-xl text-xs font-bold shadow-sm hover:bg-green-600 transition-colors">
+                        📢 Alertar
+                    </button>
+                </div>
+            `).join('');
+        }
+
+        function notificarWhatsApp(codigo) {
+            const tel = localStorage.getItem('whatsapp');
+            if (!tel) {
+                alert("Configure e SALVE seu número de WhatsApp no topo antes de enviar o alerta!");
+                return;
+            }
+            
+            // Mensagem personalizada simulando o aviso de chegada
+            const msg = `Olá! O Alerta de Entrega IA informa: Seu produto com o código *${codigo}* está chegando ou já mudou de status! 🚚🎉`;
+            
+            // Monta o link wa.me oficial do WhatsApp
+            const urlWhatsApp = `https://wa.me/${tel}?text=${encodeURIComponent(msg)}`;
+            
+            // Abre o WhatsApp direto no celular ou navegador
+            window.open(urlWhatsApp, '_blank');
+        }
+    </script>
+</body>
+</html>
